@@ -39,6 +39,31 @@ class ApiTests(unittest.TestCase):
             stylesheet.close()
             javascript.close()
 
+    def test_phase_three_dashboard_contract(self):
+        homepage_response = self.client.get("/")
+        javascript_response = self.client.get("/static/app.js")
+        try:
+            homepage = homepage_response.get_data(as_text=True)
+            javascript = javascript_response.get_data(as_text=True)
+            for screen in (
+                "overview",
+                "dataset",
+                "analysis",
+                "visualizations",
+                "findings",
+                "report",
+            ):
+                self.assertIn(f'data-screen-panel="{screen}"', homepage)
+            self.assertIn("cdn.jsdelivr.net/npm/chart.js", homepage)
+            self.assertIn('jsonRequest("/api/preview"', javascript)
+            self.assertIn('jsonRequest("/api/analyze"', javascript)
+            self.assertIn("chart?.destroy()", javascript)
+            self.assertIn("does not establish causation", javascript)
+            self.assertNotIn("Mbps speed", homepage)
+        finally:
+            homepage_response.close()
+            javascript_response.close()
+
     def test_homepage_and_health_do_not_require_default_dataset(self):
         with patch("app.DEFAULT_DATASET", Path("missing-dataset.csv")):
             self.assertEqual(self.client.get("/").status_code, 200)

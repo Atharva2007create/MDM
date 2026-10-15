@@ -18,7 +18,7 @@ Mbps or a network-interruption frequency field.
 - Backend: Python 3.11+ and Flask
 - Data processing: Pandas and NumPy
 - Statistical analysis: SciPy
-- Visualization: Chart.js (planned for Phase 3)
+- Visualization: Chart.js
 - Dataset format: CSV
 - Database: none
 - Hosting: localhost
@@ -76,7 +76,7 @@ flask --app app run --debug
 
 ## Current functionality
 
-- Responsive academic landing page
+- Responsive six-screen dashboard with desktop, tablet, and mobile layouts
 - Live backend connection indicator powered by `GET /api/health`
 - Basic JSON error responses for unknown API routes and server errors
 - Original research CSV preserved in `data/`
@@ -86,10 +86,15 @@ flask --app app run --debug
   regression, and two-sided Spearman hypothesis testing
 - Missing-pair and duplicate-row reporting without silent substitution or removal
 - Graph-ready scatter, regression-line, and frequency data
+- Default-dataset and drag-and-drop CSV workflows with live previews
+- Dynamic X/Y variable selection based on the active dataset
+- Real result cards, scatter/regression plots, distribution charts, findings,
+  and a report-ready summary generated from API responses
+- Copy-to-clipboard findings and an explicitly deferred Phase 4 PDF control
 - Automated mathematical and Flask API tests
 
-The HTML interface remains the Phase 1 foundation. Upload controls, result cards,
-and graphical charts belong to Phase 3.
+The browser keeps an uploaded `File` object only in page memory. The backend
+processes uploads in memory and does not retain them.
 
 ## API endpoints
 
@@ -146,6 +151,8 @@ python -m unittest discover -s tests -v
 
 ## Planned phases
 
-- **Phase 3:** CSV upload, dashboard interactions, results, and Chart.js visuals
-- **Phase 4:** Integration, mathematical verification, and bug fixes
+- **Phase 3:** Complete — dashboard, CSV workflow, analysis controls, findings,
+  report view, and Chart.js visuals
+- **Phase 4:** Integration hardening, mathematical verification, PDF export,
+  and bug fixes
 - **Phase 5:** Academic report based on verified application outputs

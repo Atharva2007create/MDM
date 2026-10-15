@@ -1,96 +1,152 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="An academic study of connectivity and online learning experience.">
-    <title>Internet Speed and Online Learning Experience</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
-  </head>
-  <body>
-    <header class="site-header">
-      <div class="container header-content">
-        <div>
-          <p class="eyebrow">Mathematical Foundation for GenAI · Mini-project</p>
-          <h1>Internet Speed and Online Learning Experience</h1>
-          <p class="intro">
-            Exploring how students' reported internet facilities relate to their
-            online classroom interaction, performance, and satisfaction.
-          </p>
-        </div>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Analyze relationships between student connectivity and online learning outcomes.">
+  <title>Internet Speed and Online Learning Experience</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#" data-screen="overview" aria-label="NetLearn Analytics home">
+      <span class="brand-mark">▥</span><span><strong>NetLearn</strong><small>Analytics</small></span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <button class="nav-item active" data-screen="overview"><span>⌂</span>Overview</button>
+      <button class="nav-item" data-screen="dataset"><span>▤</span>Dataset</button>
+      <button class="nav-item" data-screen="analysis"><span>▥</span>Analysis</button>
+      <button class="nav-item" data-screen="visualizations"><span>⌁</span>Visualizations</button>
+      <button class="nav-item" data-screen="findings"><span>▧</span>Findings</button>
+      <button class="nav-item" data-screen="report"><span>▧</span>Report</button>
+    </nav>
+    <button class="nav-item about" data-screen="report"><span>ⓘ</span>About Project</button>
+  </aside>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <button id="menu-toggle" class="icon-button menu-toggle" aria-label="Toggle navigation">☰</button>
+      <div class="title-group">
+        <h1>Internet Speed and Online Learning Experience</h1>
+        <p>Statistical analysis of student connectivity and online learning outcomes</p>
+      </div>
+      <div class="top-actions">
         <div id="backend-status" class="status status-checking" role="status" aria-live="polite">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span class="status-text">Checking backend…</span>
+          <span class="status-dot"></span><span class="status-text">Checking backend…</span>
         </div>
+        <button class="button secondary" id="load-default-top">▤ Load Default Dataset</button>
+        <button class="button primary" id="upload-top">⇧ Upload CSV</button>
       </div>
     </header>
 
-    <main class="container main-content">
-      <section class="card card-wide" aria-labelledby="research-heading">
-        <span class="section-number">01</span>
-        <div>
-          <h2 id="research-heading">Research objective</h2>
-          <p>
-            This project investigates whether connectivity quality is associated
-            with differences in students' online learning experience and class
-            participation. It uses reported survey ratings—not measured internet
-            speed in Mbps.
-          </p>
+    <div id="alert-region" class="alert-region" aria-live="polite"></div>
+    <input id="csv-input" type="file" accept=".csv,text/csv" hidden>
+
+    <main>
+      <section class="screen active" id="screen-overview" data-screen-panel="overview">
+        <div class="hero">
+          <div class="hero-icon">▰</div>
+          <div><span class="eyebrow">Welcome to the analysis dashboard</span>
+            <h2>Explore how connectivity relates to online learning.</h2>
+            <p>Load the research dataset or upload a compatible CSV to inspect its quality, select variables, and run statistical analysis.</p>
+          </div>
+        </div>
+        <div class="metric-grid">
+          <article class="metric"><span class="metric-icon blue">▤</span><div><small>Records</small><strong id="overview-records">—</strong><p>Rows in the active dataset</p></div></article>
+          <article class="metric"><span class="metric-icon green">▥</span><div><small>Variables</small><strong id="overview-columns">—</strong><p>Detected columns</p></div></article>
+          <article class="metric"><span class="metric-icon red">!</span><div><small>Missing Values</small><strong id="overview-missing">—</strong><p>Across all variables</p></div></article>
+          <article class="metric"><span class="metric-icon violet">⌁</span><div><small>Analysis Status</small><strong id="overview-status">Not run</strong><p id="overview-status-detail">Choose variables to begin</p></div></article>
+        </div>
+        <div class="two-column">
+          <article class="panel"><div class="panel-heading"><h3>▤ Dataset Snapshot</h3><button class="text-button" data-screen="dataset">View details →</button></div><div id="dataset-snapshot" class="empty">Loading the default dataset…</div></article>
+          <article class="panel"><div class="panel-heading"><h3>◎ Research Objective</h3></div>
+            <div class="objective"><p>Examine whether students’ reported internet facilities are associated with their online learning experience.</p>
+              <ul class="check-list"><li>Compare connectivity and learning outcome variables.</li><li>Use descriptive and inferential statistics.</li><li>Report association without implying causation.</li></ul>
+            </div>
+          </article>
+        </div>
+        <article class="panel workflow"><div><h3>⚙ How it works</h3><p>A transparent four-step workflow.</p></div>
+          <button data-screen="dataset"><b>1</b><span>Load dataset<small>Default or CSV</small></span></button><i>→</i>
+          <button data-screen="analysis"><b>2</b><span>Select variables<small>Choose X and Y</small></span></button><i>→</i>
+          <button data-screen="analysis"><b>3</b><span>Run analysis<small>Statistical methods</small></span></button><i>→</i>
+          <button data-screen="visualizations"><b>4</b><span>View insights<small>Charts and findings</small></span></button>
+        </article>
+        <div class="two-column overview-bottom">
+          <article class="panel"><div class="panel-heading"><h3>▥ Quick Visualizations</h3></div><div id="quick-visuals" class="empty">Run an analysis to populate verified charts.</div></article>
+          <article class="panel"><div class="panel-heading"><h3>▧ System Summary</h3></div><dl class="detail-list"><dt>Application</dt><dd>NetLearn Analytics</dd><dt>Purpose</dt><dd>Connectivity and online-learning analysis</dd><dt>Technology</dt><dd>Python, Flask, Chart.js</dd><dt>Status</dt><dd id="system-backend">Checking backend…</dd><dt>Data policy</dt><dd>Uploaded data stays in memory for this page session</dd></dl></article>
         </div>
       </section>
 
-      <div class="section-grid">
-        <section class="card" aria-labelledby="dataset-heading">
-          <span class="section-number">02</span>
-          <h2 id="dataset-heading">Dataset</h2>
-          <p class="tag">Source data available</p>
-          <p>
-            The original Online Education System – Review (2021) CSV is preserved
-            in the project. Upload and validation controls will be introduced in
-            Phase 3.
-          </p>
-          <div class="placeholder" aria-label="Dataset upload planned for Phase 3">
-            <span class="placeholder-icon" aria-hidden="true">CSV</span>
-            <strong>Dataset upload</strong>
-            <small>Planned for Phase 3</small>
-          </div>
-        </section>
+      <section class="screen" id="screen-dataset" data-screen-panel="dataset">
+        <div class="hero compact"><div class="hero-icon">⇧</div><div><h2>Dataset Upload &amp; Preview</h2><p>Use the included research dataset or inspect a compatible CSV before analysis.</p></div></div>
+        <div class="upload-layout">
+          <div class="drop-zone" id="drop-zone" tabindex="0" role="button"><span class="upload-symbol">⇧</span><h3>Drop CSV file here or <u>browse</u></h3><p>CSV only · maximum file size 5 MB</p><strong id="selected-file-name">No custom file selected</strong></div>
+          <article class="panel source-options"><h3>▤ Dataset Source Options</h3>
+            <label><input type="radio" name="dataset-source" value="default" id="default-source-option" checked><span><b>Use Default Research Dataset</b><small>Load the survey data included with this project.</small></span></label>
+            <label><input type="radio" name="dataset-source" value="upload" id="upload-source-option"><span><b>Upload My Own CSV</b><small>Analyze a compatible custom CSV.</small></span></label>
+          </article>
+        </div>
+        <div class="metric-grid three">
+          <article class="metric"><span class="metric-icon blue">▤</span><div><small>Records</small><strong id="dataset-records">—</strong><p>Total rows</p></div></article>
+          <article class="metric"><span class="metric-icon green">▥</span><div><small>Columns</small><strong id="dataset-columns">—</strong><p>Detected variables</p></div></article>
+          <article class="metric"><span class="metric-icon red">!</span><div><small>Missing Values</small><strong id="dataset-missing">—</strong><p>Across all columns</p></div></article>
+        </div>
+        <div class="two-column data-tables">
+          <article class="panel"><div class="panel-heading"><h3>▦ Detected Columns</h3><span class="badge" id="column-count-badge">0 columns</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Column name</th><th>Type</th><th>Missing</th></tr></thead><tbody id="columns-table"></tbody></table></div></article>
+          <article class="panel"><div class="panel-heading"><h3>▦ Preview Table</h3><span class="badge" id="preview-count-badge">No records</span></div><div class="table-wrap"><table><thead id="preview-head"></thead><tbody id="preview-body"></tbody></table></div></article>
+        </div>
+        <article class="panel"><div class="panel-heading"><h3>▣ Data Quality Summary</h3></div><div class="quality-grid">
+          <div><b id="quality-missing">—</b><span>Missing values</span></div><div><b id="quality-duplicates">—</b><span>Duplicate rows</span></div><div><b id="quality-categorical">—</b><span>Categorical fields</span></div><div><b id="quality-numeric">—</b><span>Numeric fields</span></div>
+        </div></article>
+        <div class="page-actions"><button class="button secondary" data-screen="overview">← Back to Overview</button><button class="button primary" id="proceed-analysis">Proceed to Analysis →</button></div>
+      </section>
 
-        <section class="card" aria-labelledby="analysis-heading">
-          <span class="section-number">03</span>
-          <h2 id="analysis-heading">Statistical analysis</h2>
-          <p>
-            Phase 2 backend APIs now provide data validation, descriptive
-            statistics, Spearman correlation, regression, and hypothesis
-            testing. Interactive controls will be added in Phase 3.
-          </p>
-          <ul class="future-list" aria-label="Available backend analysis capabilities">
-            <li>Data validation</li>
-            <li>Descriptive statistics</li>
-            <li>Association testing</li>
-          </ul>
-        </section>
+      <section class="screen" id="screen-analysis" data-screen-panel="analysis">
+        <div class="hero compact"><div class="hero-icon">▰</div><div><span class="eyebrow">Analysis configuration</span><h2>Select variables and configure the statistical analysis</h2><p>Choose one connectivity variable (X) and one learning outcome variable (Y).</p></div></div>
+        <div class="two-column">
+          <article class="panel"><div class="panel-heading"><h3>▤ Variable Selection</h3></div>
+            <label class="field"><span>Connectivity Variable (X)</span><select id="connectivity-select"></select><small id="connectivity-hints">Load a dataset to see suggested variables.</small></label>
+            <label class="field"><span>Learning Outcome Variable (Y)</span><select id="learning-select"></select><small id="learning-hints">Load a dataset to see suggested variables.</small></label>
+          </article>
+          <article class="panel"><div class="panel-heading"><h3>▧ Selected Variable Details</h3></div><div id="x-detail" class="variable-detail empty">Select X</div><div id="y-detail" class="variable-detail empty">Select Y</div></article>
+        </div>
+        <div class="two-column analysis-lower">
+          <article class="panel"><div class="panel-heading"><h3>⚙ Methods Included</h3></div><div class="method-grid"><span>▥<b>Mean</b></span><span>⌁<b>Median</b></span><span>Σ<b>Std. deviation</b></span><span>⌁<b>Spearman correlation</b></span><span>⌁<b>Linear regression</b></span><span>⚗<b>Hypothesis test</b></span></div></article>
+          <article class="panel warning"><div class="panel-heading"><h3>⚠ Assumptions &amp; Warnings</h3></div><ol id="analysis-warnings"><li>Results describe association, not causation.</li><li>Regression may be unavailable for nonnumeric variables.</li><li>Survey ratings should be interpreted according to their scale.</li></ol></article>
+        </div>
+        <div class="action-bar"><span>Data source: <b id="analysis-source-label">None loaded</b></span><button class="button secondary" data-screen="dataset">Preview Dataset</button><button class="button primary" id="run-analysis">▶ Run Analysis</button></div>
+      </section>
 
-        <section class="card" aria-labelledby="results-heading">
-          <span class="section-number">04</span>
-          <h2 id="results-heading">Results &amp; visualizations</h2>
-          <p>
-            Verified results and interactive Chart.js visualizations will appear
-            here after the analysis and dashboard phases are complete.
-          </p>
-          <div class="chart-placeholder" aria-label="Visualization planned for Phase 3">
-            <span></span><span></span><span></span><span></span><span></span>
+      <section class="screen" id="screen-visualizations" data-screen-panel="visualizations">
+        <div id="results-empty" class="empty-state"><h2>No analysis results yet</h2><p>Select variables and run the analysis first.</p><button class="button primary" data-screen="analysis">Configure Analysis</button></div>
+        <div id="results-content" hidden>
+          <div class="hero result-hero"><div class="hero-icon">▥</div><div><span class="eyebrow">Analysis results</span><h2>Analysis completed successfully</h2><p id="results-summary-line"></p></div><div class="selected-pair"><small>Selected variables</small><b id="results-selected-pair"></b></div></div>
+          <div class="metric-grid"><article class="metric"><span class="metric-icon green">▥</span><div><small id="mean-label">Mean</small><strong id="result-mean">—</strong></div></article><article class="metric"><span class="metric-icon violet">⌁</span><div><small id="median-label">Median</small><strong id="result-median">—</strong></div></article><article class="metric"><span class="metric-icon blue">Σ</span><div><small>Standard deviation</small><strong id="result-std">—</strong></div></article><article class="metric"><span class="metric-icon orange">♙</span><div><small>Valid observations</small><strong id="result-n">—</strong></div></article></div>
+          <div class="three-column"><article class="panel" id="correlation-result"></article><article class="panel" id="regression-result"></article><article class="panel" id="hypothesis-result"></article></div>
+          <div class="chart-grid"><article class="panel chart-card wide"><h3 id="scatter-title">Scatter plot</h3><div class="chart-box"><canvas id="scatter-chart"></canvas></div></article><article class="panel chart-card"><h3 id="learning-chart-title">Learning outcome distribution</h3><div class="chart-box"><canvas id="learning-chart"></canvas></div></article><article class="panel chart-card"><h3 id="connectivity-chart-title">Connectivity distribution</h3><div class="chart-box"><canvas id="connectivity-chart"></canvas></div></article><article class="panel warning"><h3>⚠ Warnings &amp; Limitations</h3><ul id="results-warnings"></ul></article></div>
+          <div class="page-actions"><button class="button secondary" data-screen="analysis">↻ Run Another Analysis</button><button class="button primary" data-screen="findings">View Findings →</button></div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-findings" data-screen-panel="findings">
+        <div id="findings-empty" class="empty-state"><h2>No findings available</h2><p>Run an analysis to generate evidence-based findings.</p><button class="button primary" data-screen="analysis">Start Analysis</button></div>
+        <div id="findings-content" hidden>
+          <div class="hero compact"><div class="hero-icon">▧</div><div><h2>Key Findings &amp; Report Summary</h2><p id="findings-banner-text"></p></div></div>
+          <div class="two-column findings-layout"><div><article class="panel"><h3>▥ Main Findings</h3><div id="main-findings"></div></article><article class="panel"><h3>💡 Interpretation</h3><p id="plain-interpretation"></p></article><article class="panel danger-soft"><h3>! Limitations</h3><ol id="findings-limitations"></ol></article></div>
+            <div><article class="panel"><h3>▧ Report-Ready Summary</h3><div id="report-ready-summary"></div></article><article class="panel"><h3>▥ Visual Summary</h3><div class="mini-chart-grid"><div class="chart-box mini"><canvas id="mini-connectivity-chart"></canvas></div><div class="chart-box mini"><canvas id="mini-learning-chart"></canvas></div></div></article><article class="panel export-panel"><h3>⇩ Export &amp; Next Steps</h3><div><button class="button disabled" disabled title="PDF export is planned for Phase 4">Download PDF · Phase 4</button><button class="button secondary" id="copy-results">Copy Results</button><button class="button secondary" id="start-new-analysis">Start New Analysis</button></div></article></div>
           </div>
-          <small class="muted">Visualization placeholder · Phase 3</small>
-        </section>
-      </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-report" data-screen-panel="report">
+        <div class="hero compact"><div class="hero-icon">▧</div><div><h2>Analysis Report</h2><p>A concise, printable view of the active analysis. PDF export is planned for Phase 4.</p></div></div>
+        <div id="report-empty" class="empty-state"><h2>No report available</h2><p>Complete an analysis to populate this report.</p><button class="button primary" data-screen="analysis">Start Analysis</button></div>
+        <div id="report-content" hidden class="report-sheet"><div id="report-overview"></div><div id="report-statistics"></div><div id="report-finding"></div><div id="report-limitations"></div><button class="button disabled" disabled>PDF Export · Phase 4</button></div>
+      </section>
     </main>
-
-    <footer class="site-footer">
-      <div class="container">
-        Phase 1 interface · Phase 2 statistical backend ready
-      </div>
-    </footer>
-  </body>
+    <footer>Internet Speed and Online Learning Experience <span>·</span> Local academic mini-project <span>·</span> Python, Flask and Chart.js</footer>
+  </div>
+</body>
 </html>
