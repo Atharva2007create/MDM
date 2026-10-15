@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="An academic study of connectivity and online learning experience.">
+    <title>Internet Speed and Online Learning Experience</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-content">
+        <div>
+          <p class="eyebrow">Mathematical Foundation for GenAI · Mini-project</p>
+          <h1>Internet Speed and Online Learning Experience</h1>
+          <p class="intro">
+            Exploring how students' reported internet facilities relate to their
+            online classroom interaction, performance, and satisfaction.
+          </p>
+        </div>
+        <div id="backend-status" class="status status-checking" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text">Checking backend…</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="container main-content">
+      <section class="card card-wide" aria-labelledby="research-heading">
+        <span class="section-number">01</span>
+        <div>
+          <h2 id="research-heading">Research objective</h2>
+          <p>
+            This project investigates whether connectivity quality is associated
+            with differences in students' online learning experience and class
+            participation. It uses reported survey ratings—not measured internet
+            speed in Mbps.
+          </p>
+        </div>
+      </section>
+
+      <div class="section-grid">
+        <section class="card" aria-labelledby="dataset-heading">
+          <span class="section-number">02</span>
+          <h2 id="dataset-heading">Dataset</h2>
+          <p class="tag">Source data available</p>
+          <p>
+            The original Online Education System – Review (2021) CSV is preserved
+            in the project. Upload and validation controls will be introduced in
+            Phase 3.
+          </p>
+          <div class="placeholder" aria-label="Dataset upload planned for Phase 3">
+            <span class="placeholder-icon" aria-hidden="true">CSV</span>
+            <strong>Dataset upload</strong>
+            <small>Planned for Phase 3</small>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="analysis-heading">
+          <span class="section-number">03</span>
+          <h2 id="analysis-heading">Statistical analysis</h2>
+          <p>
+            Data validation and statistical calculations will be implemented in
+            Phase 2. No analysis is performed in this foundation release.
+          </p>
+          <ul class="future-list" aria-label="Planned analysis capabilities">
+            <li>Data validation</li>
+            <li>Descriptive statistics</li>
+            <li>Association testing</li>
+          </ul>
+        </section>
+
+        <section class="card" aria-labelledby="results-heading">
+          <span class="section-number">04</span>
+          <h2 id="results-heading">Results &amp; visualizations</h2>
+          <p>
+            Verified results and interactive Chart.js visualizations will appear
+            here after the analysis and dashboard phases are complete.
+          </p>
+          <div class="chart-placeholder" aria-label="Visualization planned for Phase 3">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <small class="muted">Visualization placeholder · Phase 3</small>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        Phase 1 · Project setup and foundational structure
+      </div>
+    </footer>
+  </body>
+</html>
