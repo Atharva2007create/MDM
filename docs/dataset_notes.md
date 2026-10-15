@@ -27,8 +27,8 @@ source file.
 - Missing values: 0 across all columns
 - Exact duplicate rows: 0
 
-These are structural inspection findings only. No statistical analysis was
-performed in Phase 1.
+These quality findings are used by the Phase 2 preview endpoint. Exact duplicate
+rows are reported and retained; none are present in the original dataset.
 
 ## Actual schema
 
@@ -87,9 +87,52 @@ statistical conclusions.
   intervals from `0-10` through `91-100`
 
 The publisher describes the five-level internet, interaction, and doubt-clearing
-scales as ranging from very bad to very good. The CSV itself contains numbers
-but no embedded codebook, so that direction should be explicitly confirmed in
-Phase 2 before encoding.
+scales as ranging from very bad to very good. The CSV itself contains numerical
+levels but no embedded codebook that explicitly maps each number to a label.
+
+## Phase 2 processing rules and transformations
+
+- The original CSV is read without modification. Uploaded CSVs are processed in
+  memory and are not retained.
+- Missing values are never replaced with zero. Rows missing either selected
+  variable are excluded only from paired calculations, and the excluded count
+  is returned.
+- Exact duplicate rows are counted, reported, and retained.
+- Numeric columns and numeric strings are converted with Pandas while preserving
+  missing values.
+- Positive and negative infinity are treated as invalid observations, converted
+  to missing values in the analysis copy, counted, and excluded from paired
+  calculations.
+- Text values matching the complete documented order
+  `Bad < Average < Good` are encoded as 1–3.
+- Text values that include the five-level documented order
+  `Very Bad < Bad < Average < Good < Very Good` are encoded as 1–5.
+- Partial text scales containing only labels shared by both scales, such as
+  `Bad` and `Good`, are rejected because their intended numerical spacing is
+  ambiguous without an explicit codebook.
+- Unordered text categories such as device type, gender, and location are not
+  assigned arbitrary numbers and cannot be selected for these analyses.
+- Uploaded files containing null bytes are rejected as non-text CSV input.
+- Sample standard deviation uses `ddof=1`.
+- Paired analyses require at least three valid observations and two non-constant
+  selected variables.
+
+## Statistical assumptions
+
+- Spearman rank correlation is the primary association measure because it is
+  suitable for ordered survey ratings and does not require a linear relationship.
+- The two-sided Spearman significance test uses alpha = 0.05. A nonsignificant
+  result is reported as “fail to reject H0,” never “accept H0.”
+- The p-value is asymptotic and may be less reliable for small samples or
+  extensive tied ranks; the API emits a warning in those cases.
+- Simple linear regression is exploratory. It treats selected numerical rating
+  levels as approximately equally spaced and therefore requires cautious
+  interpretation for ordinal measures.
+- If the selected data support the other analysis but regression is unavailable,
+  the API returns a stable regression object containing null numerical results
+  and a clear reason instead of fabricating values or discarding other results.
+- Correlation and regression describe association, not causation. Results from
+  this sample must not be generalized to every Indian student.
 
 ## Known limitations
 
@@ -98,16 +141,18 @@ Phase 2 before encoding.
 - The source schema contains no explicit network-interruption-frequency field.
 - Cross-sectional survey data can show associations but does not establish
   causation.
-- Category labels, ordinal direction, and the nine observed performance values
-  must be validated before selecting Phase 2 methods or encodings.
+- The numeric direction of the five-level fields is not explicitly mapped to
+  labels inside the CSV; interpretations involving “better” or “worse” require
+  the source scale direction to be confirmed.
+- The meaning and spacing of the nine observed online-performance values require
+  caution when used in exploratory regression.
 - Any later handling of potential confounders or subgroup comparisons must be
   documented rather than assumed.
 
-## Pending preparation for Phase 2
+## Phase 3 integration notes
 
-1. Confirm scale direction and value-label semantics against source metadata.
-2. Define explicit validation rules without changing the original CSV.
-3. Choose justified encodings for ordinal and categorical fields.
-4. Create a cleaned working copy in a separate file only if Phase 2 requires it.
-5. Select statistical methods appropriate to the verified scales and project
-   research question.
+The preview endpoint provides exact columns for variable selectors. The analysis
+endpoint returns stable nested objects for summary cards, correlation,
+regression, hypothesis testing, scatter points, a regression line, and frequency
+data. Chart payloads are deterministically limited to 500 points while all valid
+pairs remain in the statistical calculations.

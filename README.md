@@ -17,7 +17,7 @@ Mbps or a network-interruption frequency field.
 - Frontend: HTML5, CSS3, and vanilla JavaScript
 - Backend: Python 3.11+ and Flask
 - Data processing: Pandas and NumPy
-- Statistical analysis: SciPy (planned for Phase 2)
+- Statistical analysis: SciPy
 - Visualization: Chart.js (planned for Phase 3)
 - Dataset format: CSV
 - Database: none
@@ -28,6 +28,7 @@ Mbps or a network-interruption frequency field.
 ```text
 MDM/
 ├── app.py
+├── statistics_engine.py
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
@@ -39,8 +40,12 @@ MDM/
 ├── data/
 │   ├── .gitkeep
 │   └── ONLINE EDUCATION SYSTEM REVIEW.csv
-└── docs/
-    └── dataset_notes.md
+├── docs/
+│   └── dataset_notes.md
+└── tests/
+    ├── __init__.py
+    ├── test_api.py
+    └── test_statistics.py
 ```
 
 ## Local setup
@@ -69,21 +74,78 @@ Alternatively, use Flask's development command:
 flask --app app run --debug
 ```
 
-## Phase 1 functionality
+## Current functionality
 
 - Responsive academic landing page
 - Live backend connection indicator powered by `GET /api/health`
 - Basic JSON error responses for unknown API routes and server errors
 - Original research CSV preserved in `data/`
-- Verified dataset schema and preparation notes
-- Startup does not depend on loading or processing the dataset
+- CSV upload and verified default-dataset preview
+- File, size, source, column, empty-data, text-content, and numeric/ordinal validation
+- Mean, median, sample standard deviation, Spearman correlation, simple linear
+  regression, and two-sided Spearman hypothesis testing
+- Missing-pair and duplicate-row reporting without silent substitution or removal
+- Graph-ready scatter, regression-line, and frequency data
+- Automated mathematical and Flask API tests
 
-The dataset, analysis, and visualization areas are intentionally informational
-in Phase 1. They do not present nonfunctional controls as usable features.
+The HTML interface remains the Phase 1 foundation. Upload controls, result cards,
+and graphical charts belong to Phase 3.
+
+## API endpoints
+
+### `GET /api/health`
+
+Returns the backend status.
+
+### `POST /api/preview`
+
+Send `multipart/form-data` with either:
+
+- `file`: a CSV upload no larger than 5 MB, or
+- `source=default`: the verified research CSV included in `data/`.
+
+The response includes dimensions, columns, inferred types, missing values,
+duplicates, five actual preview records, and suggested analysis columns.
+
+### `POST /api/analyze`
+
+Send the same dataset source plus:
+
+- `connectivity_column`: exact CSV column name for the predictor
+- `learning_column`: exact CSV column name for the outcome
+
+The response contains dataset metadata, processing details, valid-pair counts,
+descriptive statistics, Spearman correlation, linear regression, hypothesis-test
+results, visualization-ready values, and warnings. If correlation is valid but
+regression cannot be calculated defensibly, the regression object keeps the same
+keys with `status: "unavailable"`, null results, and an explanatory reason.
+Uploaded files are processed in memory and are not retained.
+
+Example using the included dataset:
+
+```powershell
+$form = @{
+    source = "default"
+    connectivity_column = "Internet facility in your locality"
+    learning_column = "Your interaction in online mode"
+}
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/analyze" -Form $form
+```
+
+Only numeric columns and two documented ordered text scales are accepted. The
+accepted text scales are `Bad < Average < Good` and
+`Very Bad < Bad < Average < Good < Very Good`. A partial scale containing only
+overlapping labels such as `Bad` and `Good` is rejected as ambiguous. Unordered
+categories and files containing null bytes are also rejected.
+
+## Run the tests
+
+```powershell
+python -m unittest discover -s tests -v
+```
 
 ## Planned phases
 
-- **Phase 2:** Data validation, statistical calculations, and analysis APIs
 - **Phase 3:** CSV upload, dashboard interactions, results, and Chart.js visuals
 - **Phase 4:** Integration, mathematical verification, and bug fixes
 - **Phase 5:** Academic report based on verified application outputs
