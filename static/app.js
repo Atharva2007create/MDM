@@ -25,7 +25,7 @@ function showToast(message, kind = "success") {
   const toast = document.createElement("div");
   toast.className = `toast ${kind === "error" ? "error" : ""}`;
   toast.textContent = message;
-  $("#alert-region").append(toast);
+  $("#alert-region").replaceChildren(toast);
   window.setTimeout(() => toast.remove(), 4500);
 }
 
@@ -382,7 +382,7 @@ function destroyCharts() {
 
 function chartAvailable() {
   if (typeof window.Chart === "undefined") {
-    showToast("Chart.js could not load. Check the network connection and reload.", "error");
+    showToast("The local chart library could not load. Reload the application.", "error");
     return false;
   }
   return true;
@@ -556,7 +556,7 @@ async function downloadPdf(button) {
     document.body.append(link);
     link.click();
     link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     showToast("PDF report downloaded successfully.");
   } catch (error) {
     showToast(error.message, "error");

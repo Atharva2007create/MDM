@@ -18,7 +18,7 @@ Mbps or a network-interruption frequency field.
 - Backend: Python 3.11+ and Flask
 - Data processing: Pandas and NumPy
 - Statistical analysis: SciPy
-- Visualization: Chart.js
+- Visualization: locally vendored Chart.js 4.5.1
 - PDF generation: ReportLab
 - Dataset format: CSV
 - Database: none
@@ -38,7 +38,11 @@ MDM/
 │   └── index.html
 ├── static/
 │   ├── style.css
-│   └── app.js
+│   ├── app.js
+│   ├── favicon.svg
+│   └── vendor/chartjs/
+│       ├── chart.umd.min.js
+│       └── LICENSE.md
 ├── data/
 │   ├── .gitkeep
 │   └── ONLINE EDUCATION SYSTEM REVIEW.csv
@@ -94,10 +98,15 @@ flask --app app run --debug
   and a report-ready summary generated from API responses
 - Copy-to-clipboard findings and genuine in-memory PDF report downloads
 - Automatic invalidation of old results when the dataset or selected variables change
+- Offline chart rendering through the pinned local Chart.js 4.5.1 UMD build
 - Automated mathematical and Flask API tests
 
 The browser keeps an uploaded `File` object only in page memory. The backend
 processes uploads in memory and does not retain them.
+
+Chart.js is served from `static/vendor/chartjs/`, so chart rendering does not
+require an internet connection. The bundled library remains licensed under its
+included MIT license.
 
 ## API endpoints
 

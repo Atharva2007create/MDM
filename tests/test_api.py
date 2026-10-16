@@ -35,6 +35,10 @@ class ApiTests(unittest.TestCase):
             self.assertIn(b'id="backend-status"', homepage.data)
             self.assertIn(b'fetch("/api/health"', javascript.data)
             self.assertIn(b"Backend connected", javascript.data)
+            self.assertIn(b'replaceChildren(toast)', javascript.data)
+            self.assertIn(b"[hidden]{display:none!important}", stylesheet.data)
+            self.assertIn(b".data-tables>.panel{min-width:0}", stylesheet.data)
+            self.assertIn(b'/static/favicon.svg', homepage.data)
         finally:
             homepage.close()
             stylesheet.close()
@@ -43,6 +47,7 @@ class ApiTests(unittest.TestCase):
     def test_phase_three_dashboard_contract(self):
         homepage_response = self.client.get("/")
         javascript_response = self.client.get("/static/app.js")
+        chart_response = self.client.get("/static/vendor/chartjs/chart.umd.min.js")
         try:
             homepage = homepage_response.get_data(as_text=True)
             javascript = javascript_response.get_data(as_text=True)
@@ -55,7 +60,10 @@ class ApiTests(unittest.TestCase):
                 "report",
             ):
                 self.assertIn(f'data-screen-panel="{screen}"', homepage)
-            self.assertIn("cdn.jsdelivr.net/npm/chart.js", homepage)
+            self.assertIn("/static/vendor/chartjs/chart.umd.min.js", homepage)
+            self.assertNotIn("cdn.jsdelivr.net/npm/chart.js", homepage)
+            self.assertEqual(chart_response.status_code, 200)
+            self.assertIn(b"Chart.js v4.5.1", chart_response.data[:100])
             self.assertIn('jsonRequest("/api/preview"', javascript)
             self.assertIn('jsonRequest("/api/analyze"', javascript)
             self.assertIn('fetch("/api/report/pdf"', javascript)
@@ -69,6 +77,7 @@ class ApiTests(unittest.TestCase):
         finally:
             homepage_response.close()
             javascript_response.close()
+            chart_response.close()
 
     def test_homepage_and_health_do_not_require_default_dataset(self):
         with patch("app.DEFAULT_DATASET", Path("missing-dataset.csv")):
