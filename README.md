@@ -46,6 +46,12 @@ MDM/
 ├── data/
 │   ├── .gitkeep
 │   └── ONLINE EDUCATION SYSTEM REVIEW.csv
+├── samples/
+│   ├── 01_strong_positive_connectivity.csv
+│   ├── 02_network_interruptions.csv
+│   ├── 03_rural_mobile_learning.csv
+│   ├── 04_mixed_learning_factors.csv
+│   └── 05_missing_values_practice.csv
 ├── docs/
 │   └── dataset_notes.md
 └── tests/
@@ -158,11 +164,17 @@ shared engine, and returns `NetLearn_Analysis_Report.pdf` with content type
 
 ## Usage
 
+Live application: <https://netlearn-analytics.vercel.app>
+
 1. Open the application and load the included dataset or upload a CSV.
 2. Review the detected columns, preview rows, and data-quality summary.
 3. Select a connectivity variable and a learning-outcome variable.
 4. Run the analysis and review statistics and visualizations.
 5. Open Findings or Report and download the generated PDF.
+
+Five synthetic, upload-ready datasets are available in `samples/`. They cover
+strong positive connectivity effects, network interruptions, rural mobile
+learning, mixed learning factors, and missing-value handling.
 
 The included dataset is **Online Education System - Review (2021)** by Sujatha
 Radhakrishnan, DOI `10.17632/bzk9zbyvv7.1`. The verified local copy contains
@@ -177,7 +189,8 @@ processing assumptions.
 - Statistical association does not establish causation.
 - Spearman p-values can be less reliable for very small samples or extensive ties.
 - Exploratory regression treats numerical rating levels as approximately equally spaced.
-- The application is intended for ordinary small academic CSV datasets and runs locally.
+- The application is intended for ordinary small academic CSV datasets and can
+  run locally or on its Vercel deployment.
 
 Only numeric columns and two documented ordered text scales are accepted. The
 accepted text scales are `Bad < Average < Good` and
