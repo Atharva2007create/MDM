@@ -10,3 +10,6 @@ Thumbs.db
 /work/
 /tmp/
 /files-pasted-by-the-user-phase/
+
+.vercel
+.env*

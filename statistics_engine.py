@@ -7,7 +7,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 ALPHA = 0.05
@@ -219,6 +218,63 @@ def _association_label(coefficient: float) -> str:
     return "no monotonic"
 
 
+def _continued_beta_fraction(a: float, b: float, x: float) -> float:
+    """Evaluate the continued fraction used by the regularized beta function."""
+    qab = a + b
+    qap = a + 1.0
+    qam = a - 1.0
+    c = 1.0
+    d = 1.0 - qab * x / qap
+    d = 1e-300 if abs(d) < 1e-300 else d
+    d = 1.0 / d
+    result = d
+    for iteration in range(1, 201):
+        even = 2 * iteration
+        term = iteration * (b - iteration) * x / ((qam + even) * (a + even))
+        d = 1.0 + term * d
+        d = 1e-300 if abs(d) < 1e-300 else d
+        c = 1.0 + term / c
+        c = 1e-300 if abs(c) < 1e-300 else c
+        d = 1.0 / d
+        result *= d * c
+
+        term = -(a + iteration) * (qab + iteration) * x / ((a + even) * (qap + even))
+        d = 1.0 + term * d
+        d = 1e-300 if abs(d) < 1e-300 else d
+        c = 1.0 + term / c
+        c = 1e-300 if abs(c) < 1e-300 else c
+        d = 1.0 / d
+        delta = d * c
+        result *= delta
+        if abs(delta - 1.0) < 3e-14:
+            break
+    return result
+
+
+def _regularized_beta(x: float, a: float, b: float) -> float:
+    """Return the regularized incomplete beta function without SciPy."""
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+    factor = math.exp(
+        math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b)
+        + a * math.log(x) + b * math.log1p(-x)
+    )
+    if x < (a + 1.0) / (a + b + 2.0):
+        return factor * _continued_beta_fraction(a, b, x) / a
+    return 1.0 - factor * _continued_beta_fraction(b, a, 1.0 - x) / b
+
+
+def _correlation_p_value(coefficient: float, count: int) -> float:
+    """Two-sided correlation p-value using Student's t distribution."""
+    if abs(coefficient) >= 1.0:
+        return 0.0
+    degrees_freedom = count - 2
+    t_squared = coefficient * coefficient * degrees_freedom / (1.0 - coefficient * coefficient)
+    return _regularized_beta(degrees_freedom / (degrees_freedom + t_squared), degrees_freedom / 2.0, 0.5)
+
+
 def calculate_spearman(x: pd.Series, y: pd.Series) -> dict[str, Any]:
     """Calculate a two-sided Spearman rank correlation."""
     paired = _paired_values(x, y)
@@ -230,9 +286,10 @@ def calculate_spearman(x: pd.Series, y: pd.Series) -> dict[str, Any]:
     if paired["x"].nunique() < 2 or paired["y"].nunique() < 2:
         raise AnalysisValidationError("Correlation cannot be calculated for a constant variable.")
 
-    result = stats.spearmanr(paired["x"], paired["y"], alternative="two-sided")
-    coefficient = _finite_number(result.statistic)
-    p_value = _finite_number(result.pvalue)
+    ranked_x = paired["x"].rank(method="average").to_numpy(dtype=float)
+    ranked_y = paired["y"].rank(method="average").to_numpy(dtype=float)
+    coefficient = _finite_number(np.corrcoef(ranked_x, ranked_y)[0, 1])
+    p_value = _finite_number(_correlation_p_value(float(coefficient), count)) if coefficient is not None else None
     if coefficient is None or p_value is None:
         raise AnalysisValidationError("Spearman correlation produced an invalid numerical result.")
 
@@ -252,7 +309,7 @@ def calculate_spearman(x: pd.Series, y: pd.Series) -> dict[str, Any]:
 
 
 def calculate_regression(x: pd.Series, y: pd.Series) -> dict[str, Any]:
-    """Calculate exploratory simple linear regression with SciPy."""
+    """Calculate exploratory ordinary least-squares linear regression."""
     paired = _paired_values(x, y)
     count = int(len(paired))
     if count < MINIMUM_PAIRED_OBSERVATIONS:
@@ -262,10 +319,15 @@ def calculate_regression(x: pd.Series, y: pd.Series) -> dict[str, Any]:
     if paired["x"].nunique() < 2:
         raise AnalysisValidationError("Regression cannot be calculated with a constant predictor.")
 
-    result = stats.linregress(paired["x"], paired["y"])
-    slope = _finite_number(result.slope)
-    intercept = _finite_number(result.intercept)
-    r_squared = _finite_number(result.rvalue**2)
+    x_values = paired["x"].to_numpy(dtype=float)
+    y_values = paired["y"].to_numpy(dtype=float)
+    x_centered = x_values - x_values.mean()
+    y_centered = y_values - y_values.mean()
+    slope = _finite_number(np.dot(x_centered, y_centered) / np.dot(x_centered, x_centered))
+    intercept = _finite_number(y_values.mean() - float(slope) * x_values.mean()) if slope is not None else None
+    denominator = math.sqrt(float(np.dot(x_centered, x_centered) * np.dot(y_centered, y_centered)))
+    pearson_r = float(np.dot(x_centered, y_centered) / denominator) if denominator else 0.0
+    r_squared = _finite_number(pearson_r * pearson_r)
     if slope is None or intercept is None or r_squared is None:
         raise AnalysisValidationError("Linear regression produced an invalid numerical result.")
 
@@ -277,7 +339,7 @@ def calculate_regression(x: pd.Series, y: pd.Series) -> dict[str, Any]:
     ]
     return {
         "status": "available",
-        "method": "SciPy simple linear regression",
+        "method": "Ordinary least-squares simple linear regression",
         "slope": slope,
         "intercept": intercept,
         "r_squared": r_squared,
@@ -296,7 +358,7 @@ def unavailable_regression(reason: str) -> dict[str, Any]:
     return {
         "status": "unavailable",
         "reason": reason,
-        "method": "SciPy simple linear regression",
+        "method": "Ordinary least-squares simple linear regression",
         "slope": None,
         "intercept": None,
         "r_squared": None,

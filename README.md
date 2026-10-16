@@ -17,7 +17,7 @@ Mbps or a network-interruption frequency field.
 - Frontend: HTML5, CSS3, and vanilla JavaScript
 - Backend: Python 3.11+ and Flask
 - Data processing: Pandas and NumPy
-- Statistical analysis: SciPy
+- Statistical analysis: NumPy and Pandas
 - Visualization: locally vendored Chart.js 4.5.1
 - PDF generation: ReportLab
 - Dataset format: CSV
