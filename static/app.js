@@ -79,11 +79,13 @@ function navigate(screen) {
   if (!target) return;
   state.screen = screen;
   $$(".screen").forEach((panel) => panel.classList.toggle("active", panel === target));
-  $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.screen === screen));
+  $$(".sidebar nav .nav-item").forEach((item) => item.classList.toggle("active", item.dataset.screen === screen));
+  $(".about").classList.remove("active");
   $("#sidebar").classList.remove("open");
   window.scrollTo({ top: 0, behavior: "smooth" });
   if (screen === "visualizations" && state.analysis) window.setTimeout(renderResultCharts, 0);
   if (screen === "findings" && state.analysis) window.setTimeout(renderMiniCharts, 0);
+  if (screen === "overview" && state.analysis) window.setTimeout(renderQuickCharts, 0);
 }
 
 function currentFormData() {
@@ -277,6 +279,15 @@ function resetAnalysisViews() {
   $("#quick-visuals").textContent = "Run an analysis to populate verified charts.";
 }
 
+function invalidateAnalysis(message = "Variable selection changed; run a new analysis.") {
+  if (!state.analysis) return;
+  state.analysis = null;
+  destroyCharts();
+  resetAnalysisViews();
+  $("#overview-status").textContent = "Ready";
+  $("#overview-status-detail").textContent = message;
+}
+
 async function runAnalysis() {
   if (!state.preview) return showToast("Load a dataset first.", "error");
   const x = $("#connectivity-select").value;
@@ -325,8 +336,8 @@ function renderAnalysis() {
   renderResultPanels();
   renderFindings();
   renderReport();
-  $("#quick-visuals").className = "";
-  $("#quick-visuals").innerHTML = `<p><b>${escapeHtml(x)}</b> vs. <b>${escapeHtml(y)}</b></p><p>${escapeHtml(result.correlation.interpretation || "Analysis completed.")}</p><button class="button secondary" data-screen="visualizations">Open verified charts</button>`;
+  $("#quick-visuals").className = "quick-chart-grid";
+  $("#quick-visuals").innerHTML = `<div><b>${escapeHtml(x)}</b><div class="chart-box mini"><canvas id="quick-connectivity-chart"></canvas></div></div><div><b>${escapeHtml(y)}</b><div class="chart-box mini"><canvas id="quick-learning-chart"></canvas></div></div><button class="button secondary" data-screen="visualizations">Open full results</button>`;
   bindNavigation($("#quick-visuals"));
 }
 
@@ -469,6 +480,13 @@ function renderMiniCharts() {
   renderDistribution("miniLearning", $("#mini-learning-chart"), visual.distributions.learning_outcome || [], state.analysis.selected_variables.learning_outcome.column, "#2587e9");
 }
 
+function renderQuickCharts() {
+  if (!state.analysis || !chartAvailable()) return;
+  const visual = state.analysis.visualization_data;
+  renderDistribution("quickConnectivity", $("#quick-connectivity-chart"), visual.distributions.connectivity || [], state.analysis.selected_variables.connectivity.column, "#18ae7a");
+  renderDistribution("quickLearning", $("#quick-learning-chart"), visual.distributions.learning_outcome || [], state.analysis.selected_variables.learning_outcome.column, "#2587e9");
+}
+
 function renderReport() {
   const result = state.analysis;
   const x = result.selected_variables.connectivity.column;
@@ -505,6 +523,48 @@ async function copyResults() {
   }
 }
 
+async function downloadPdf(button) {
+  if (!state.analysis) {
+    showToast("Run an analysis before downloading a report.", "error");
+    return;
+  }
+  setButtonLoading(button, true, "Generating PDF…");
+  try {
+    const form = currentFormData();
+    form.append("connectivity_column", state.analysis.selected_variables.connectivity.column);
+    form.append("learning_column", state.analysis.selected_variables.learning_outcome.column);
+    const response = await fetch("/api/report/pdf", { method: "POST", body: form });
+    if (!response.ok) {
+      let message = "PDF generation failed.";
+      try {
+        const payload = await response.json();
+        message = payload.message || message;
+      } catch {
+        // Keep the generic message when the failure is not JSON.
+      }
+      throw new Error(message);
+    }
+    const contentType = response.headers.get("Content-Type") || "";
+    if (!contentType.includes("application/pdf")) {
+      throw new Error("The server did not return a valid PDF response.");
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "NetLearn_Analysis_Report.pdf";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast("PDF report downloaded successfully.");
+  } catch (error) {
+    showToast(error.message, "error");
+  } finally {
+    setButtonLoading(button, false);
+  }
+}
+
 function bindNavigation(root = document) {
   root.querySelectorAll("[data-screen]").forEach((element) => {
     if (element.dataset.bound) return;
@@ -518,13 +578,17 @@ function bindNavigation(root = document) {
 
 function bindEvents() {
   bindNavigation();
+  const openFilePicker = () => {
+    $("#csv-input").value = "";
+    $("#csv-input").click();
+  };
   $("#menu-toggle").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
   $("#load-default-top").addEventListener("click", async () => { await chooseDefault(); navigate("dataset"); });
-  $("#upload-top").addEventListener("click", () => $("#csv-input").click());
+  $("#upload-top").addEventListener("click", openFilePicker);
   $("#csv-input").addEventListener("change", (event) => acceptFile(event.target.files[0]));
-  $("#drop-zone").addEventListener("click", () => $("#csv-input").click());
+  $("#drop-zone").addEventListener("click", openFilePicker);
   $("#drop-zone").addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") $("#csv-input").click();
+    if (event.key === "Enter" || event.key === " ") openFilePicker();
   });
   ["dragenter", "dragover"].forEach((name) => $("#drop-zone").addEventListener(name, (event) => {
     event.preventDefault(); $("#drop-zone").classList.add("dragover");
@@ -536,23 +600,32 @@ function bindEvents() {
   $$("input[name=dataset-source]").forEach((radio) => radio.addEventListener("change", async (event) => {
     const next = event.target.value;
     if (next === "upload" && !state.file) {
-      $("#csv-input").click();
+      openFilePicker();
       syncSourceControls();
       return;
     }
     try { await loadPreview(next); } catch (error) { showToast(error.message, "error"); syncSourceControls(); }
   }));
   $("#proceed-analysis").addEventListener("click", () => state.preview ? navigate("analysis") : showToast("Load a dataset first.", "error"));
-  $("#connectivity-select").addEventListener("change", updateVariableDetails);
-  $("#learning-select").addEventListener("change", updateVariableDetails);
+  $("#connectivity-select").addEventListener("change", () => {
+    updateVariableDetails();
+    invalidateAnalysis();
+  });
+  $("#learning-select").addEventListener("change", () => {
+    updateVariableDetails();
+    invalidateAnalysis();
+  });
   $("#run-analysis").addEventListener("click", runAnalysis);
   $("#copy-results").addEventListener("click", copyResults);
   $("#start-new-analysis").addEventListener("click", () => navigate("analysis"));
+  $("#download-findings-pdf").addEventListener("click", (event) => downloadPdf(event.currentTarget));
+  $("#download-report-pdf").addEventListener("click", (event) => downloadPdf(event.currentTarget));
 }
 
 async function initialize() {
   bindEvents();
   checkBackend();
+  window.setInterval(checkBackend, 30_000);
   try {
     await loadPreview("default");
   } catch (error) {

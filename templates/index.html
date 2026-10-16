@@ -22,7 +22,7 @@
       <button class="nav-item" data-screen="findings"><span>▧</span>Findings</button>
       <button class="nav-item" data-screen="report"><span>▧</span>Report</button>
     </nav>
-    <button class="nav-item about" data-screen="report"><span>ⓘ</span>About Project</button>
+    <button class="nav-item about" data-screen="overview"><span>ⓘ</span>About Project</button>
   </aside>
 
   <div class="app-shell">
@@ -135,15 +135,15 @@
         <div id="findings-content" hidden>
           <div class="hero compact"><div class="hero-icon">▧</div><div><h2>Key Findings &amp; Report Summary</h2><p id="findings-banner-text"></p></div></div>
           <div class="two-column findings-layout"><div><article class="panel"><h3>▥ Main Findings</h3><div id="main-findings"></div></article><article class="panel"><h3>💡 Interpretation</h3><p id="plain-interpretation"></p></article><article class="panel danger-soft"><h3>! Limitations</h3><ol id="findings-limitations"></ol></article></div>
-            <div><article class="panel"><h3>▧ Report-Ready Summary</h3><div id="report-ready-summary"></div></article><article class="panel"><h3>▥ Visual Summary</h3><div class="mini-chart-grid"><div class="chart-box mini"><canvas id="mini-connectivity-chart"></canvas></div><div class="chart-box mini"><canvas id="mini-learning-chart"></canvas></div></div></article><article class="panel export-panel"><h3>⇩ Export &amp; Next Steps</h3><div><button class="button disabled" disabled title="PDF export is planned for Phase 4">Download PDF · Phase 4</button><button class="button secondary" id="copy-results">Copy Results</button><button class="button secondary" id="start-new-analysis">Start New Analysis</button></div></article></div>
+            <div><article class="panel"><h3>▧ Report-Ready Summary</h3><div id="report-ready-summary"></div></article><article class="panel"><h3>▥ Visual Summary</h3><div class="mini-chart-grid"><div class="chart-box mini"><canvas id="mini-connectivity-chart"></canvas></div><div class="chart-box mini"><canvas id="mini-learning-chart"></canvas></div></div></article><article class="panel export-panel"><h3>⇩ Export &amp; Next Steps</h3><div><button class="button primary" id="download-findings-pdf">⇩ Download PDF</button><button class="button secondary" id="copy-results">Copy Results</button><button class="button secondary" id="start-new-analysis">Start New Analysis</button></div></article></div>
           </div>
         </div>
       </section>
 
       <section class="screen" id="screen-report" data-screen-panel="report">
-        <div class="hero compact"><div class="hero-icon">▧</div><div><h2>Analysis Report</h2><p>A concise, printable view of the active analysis. PDF export is planned for Phase 4.</p></div></div>
+        <div class="hero compact"><div class="hero-icon">▧</div><div><h2>Analysis Report</h2><p>A concise view of the active analysis with a downloadable academic PDF generated from verified backend calculations.</p></div></div>
         <div id="report-empty" class="empty-state"><h2>No report available</h2><p>Complete an analysis to populate this report.</p><button class="button primary" data-screen="analysis">Start Analysis</button></div>
-        <div id="report-content" hidden class="report-sheet"><div id="report-overview"></div><div id="report-statistics"></div><div id="report-finding"></div><div id="report-limitations"></div><button class="button disabled" disabled>PDF Export · Phase 4</button></div>
+        <div id="report-content" hidden class="report-sheet"><div id="report-overview"></div><div id="report-statistics"></div><div id="report-finding"></div><div id="report-limitations"></div><button class="button primary" id="download-report-pdf">⇩ Download PDF Report</button></div>
       </section>
     </main>
     <footer>Internet Speed and Online Learning Experience <span>·</span> Local academic mini-project <span>·</span> Python, Flask and Chart.js</footer>

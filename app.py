@@ -4,9 +4,10 @@ from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 from werkzeug.exceptions import MethodNotAllowed, RequestEntityTooLarge
 
+from pdf_report import build_pdf_report
 from statistics_engine import (
     AnalysisValidationError,
     analyze_dataframe,
@@ -110,6 +111,34 @@ def analyze_dataset():
             source_name=source_name,
         )
         return jsonify(result)
+    except AnalysisValidationError as error:
+        return _error(str(error), 400)
+
+
+@app.post("/api/report/pdf")
+def download_pdf_report():
+    """Recalculate the selected analysis and return a real PDF download."""
+    try:
+        dataframe, source_name = _load_request_dataframe()
+        result = analyze_dataframe(
+            dataframe,
+            request.form.get("connectivity_column", "").strip(),
+            request.form.get("learning_column", "").strip(),
+            source_name=source_name,
+        )
+        source_type = (
+            "default"
+            if request.form.get("source", "").strip().casefold() == "default"
+            else "upload"
+        )
+        pdf_stream = build_pdf_report(result, source_type=source_type)
+        return send_file(
+            pdf_stream,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name="NetLearn_Analysis_Report.pdf",
+            max_age=0,
+        )
     except AnalysisValidationError as error:
         return _error(str(error), 400)
 

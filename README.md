@@ -19,6 +19,7 @@ Mbps or a network-interruption frequency field.
 - Data processing: Pandas and NumPy
 - Statistical analysis: SciPy
 - Visualization: Chart.js
+- PDF generation: ReportLab
 - Dataset format: CSV
 - Database: none
 - Hosting: localhost
@@ -29,6 +30,7 @@ Mbps or a network-interruption frequency field.
 MDM/
 ├── app.py
 ├── statistics_engine.py
+├── pdf_report.py
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
@@ -90,7 +92,8 @@ flask --app app run --debug
 - Dynamic X/Y variable selection based on the active dataset
 - Real result cards, scatter/regression plots, distribution charts, findings,
   and a report-ready summary generated from API responses
-- Copy-to-clipboard findings and an explicitly deferred Phase 4 PDF control
+- Copy-to-clipboard findings and genuine in-memory PDF report downloads
+- Automatic invalidation of old results when the dataset or selected variables change
 - Automated mathematical and Flask API tests
 
 The browser keeps an uploaded `File` object only in page memory. The backend
@@ -137,6 +140,36 @@ $form = @{
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/analyze" -Form $form
 ```
 
+### `POST /api/report/pdf`
+
+Uses the same multipart fields as `/api/analyze`. The backend reloads and
+validates the selected dataset, repeats the statistical analysis using the
+shared engine, and returns `NetLearn_Analysis_Report.pdf` with content type
+`application/pdf`. Statistical values supplied by the browser are never trusted.
+
+## Usage
+
+1. Open the application and load the included dataset or upload a CSV.
+2. Review the detected columns, preview rows, and data-quality summary.
+3. Select a connectivity variable and a learning-outcome variable.
+4. Run the analysis and review statistics and visualizations.
+5. Open Findings or Report and download the generated PDF.
+
+The included dataset is **Online Education System - Review (2021)** by Sujatha
+Radhakrishnan, DOI `10.17632/bzk9zbyvv7.1`. The verified local copy contains
+1,033 rows and 23 columns with no missing values or exact duplicate rows. See
+`docs/dataset_notes.md` for the complete schema, SHA-256, provenance, and
+processing assumptions.
+
+## Limitations
+
+- Internet facility is a reported ordinal rating, not measured Mbps, latency,
+  or interruption frequency.
+- Statistical association does not establish causation.
+- Spearman p-values can be less reliable for very small samples or extensive ties.
+- Exploratory regression treats numerical rating levels as approximately equally spaced.
+- The application is intended for ordinary small academic CSV datasets and runs locally.
+
 Only numeric columns and two documented ordered text scales are accepted. The
 accepted text scales are `Bad < Average < Good` and
 `Very Bad < Bad < Average < Good < Very Good`. A partial scale containing only
@@ -153,6 +186,6 @@ python -m unittest discover -s tests -v
 
 - **Phase 3:** Complete — dashboard, CSV workflow, analysis controls, findings,
   report view, and Chart.js visuals
-- **Phase 4:** Integration hardening, mathematical verification, PDF export,
-  and bug fixes
+- **Phase 4:** Complete — integration hardening, stale-state prevention,
+  mathematical verification, real PDF export, and regression tests
 - **Phase 5:** Academic report based on verified application outputs

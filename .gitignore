@@ -7,4 +7,6 @@ venv/
 Thumbs.db
 .pytest_cache/
 .coverage
+/work/
+/tmp/
 /files-pasted-by-the-user-phase/

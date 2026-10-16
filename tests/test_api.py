@@ -7,6 +7,7 @@ from app import app
 
 
 VALID_CSV = b"internet,learning,note\n1,2,a\n2,4,b\n3,6,c\n4,8,d\n5,10,e\n"
+NONSIGNIFICANT_NEGATIVE_CSV = b"internet,learning\n1,3\n2,5\n3,1\n4,4\n5,2\n"
 
 
 class ApiTests(unittest.TestCase):
@@ -57,8 +58,13 @@ class ApiTests(unittest.TestCase):
             self.assertIn("cdn.jsdelivr.net/npm/chart.js", homepage)
             self.assertIn('jsonRequest("/api/preview"', javascript)
             self.assertIn('jsonRequest("/api/analyze"', javascript)
+            self.assertIn('fetch("/api/report/pdf"', javascript)
             self.assertIn("chart?.destroy()", javascript)
             self.assertIn("does not establish causation", javascript)
+            self.assertIn("invalidateAnalysis", javascript)
+            self.assertIn('id="download-findings-pdf"', homepage)
+            self.assertIn('id="download-report-pdf"', homepage)
+            self.assertNotIn("PDF Export · Phase 4", homepage)
             self.assertNotIn("Mbps speed", homepage)
         finally:
             homepage_response.close()
@@ -219,6 +225,75 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(payload["correlation"]["status"], "available")
         self.assertEqual(payload["regression"]["status"], "available")
         self.assertTrue(payload["visualization_data"]["scatter_points_sampled"])
+
+    def test_default_dataset_pdf_report(self):
+        response = self.client.post(
+            "/api/report/pdf",
+            data={
+                "source": "default",
+                "connectivity_column": "Internet facility in your locality",
+                "learning_column": "Your interaction in online mode",
+            },
+        )
+        content = response.get_data()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "application/pdf")
+        self.assertIn(
+            'attachment; filename=NetLearn_Analysis_Report.pdf',
+            response.headers["Content-Disposition"],
+        )
+        self.assertTrue(content.startswith(b"%PDF-"))
+        self.assertGreater(len(content), 10_000)
+        self.assertIn(b"Research Objective", content)
+        self.assertIn(b"Hypothesis Testing", content)
+        self.assertIn(b"Internet facility in your locality", content)
+        self.assertIn(b"Your interaction in online mode", content)
+
+    def test_uploaded_csv_pdf_uses_current_variables_and_calculations(self):
+        response = self.client.post(
+            "/api/report/pdf",
+            data={
+                "file": (BytesIO(VALID_CSV), "students.csv"),
+                "connectivity_column": "internet",
+                "learning_column": "learning",
+            },
+            content_type="multipart/form-data",
+        )
+        content = response.get_data()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(content.startswith(b"%PDF-"))
+        self.assertIn(b"students.csv", content)
+        self.assertIn(b"y = 2x + 0", content)
+        self.assertIn(b"Reject H0", content)
+
+    def test_pdf_invalid_request_returns_json_error(self):
+        response = self.client.post(
+            "/api/report/pdf",
+            data={
+                "source": "default",
+                "connectivity_column": "missing",
+                "learning_column": "Your interaction in online mode",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.mimetype, "application/json")
+        self.assertIn("not found", response.get_json()["message"])
+
+    def test_pdf_preserves_negative_nonsignificant_interpretation(self):
+        response = self.client.post(
+            "/api/report/pdf",
+            data={
+                "file": (BytesIO(NONSIGNIFICANT_NEGATIVE_CSV), "negative.csv"),
+                "connectivity_column": "internet",
+                "learning_column": "learning",
+            },
+            content_type="multipart/form-data",
+        )
+        content = response.get_data()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"moderate negative", content)
+        self.assertIn(b"Fail to reject H0", content)
+        self.assertNotIn(b"Reject H0", content.replace(b"Fail to reject H0", b""))
 
 
 if __name__ == "__main__":
